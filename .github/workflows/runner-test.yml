@@ -1,52 +1,60 @@
 name: Runner Test
-on:
-    workflow_dispatch:
-        inputs:
-            tag:
-                description: 'Tag to run'
-                required: false
-                default: ''
 
-            env:
-                description: 'Environment to run'
-                required: true
-                type: choice
-                options:
-                    - test
-                    - prod
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to run'
+        required: false
+        default: ''
+      env:
+        description: 'Environment to run'
+        required: true
+        type: choice
+        options:
+          - test
+          - prod
 
 jobs:
-    run-tests:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up JDK 17
-              uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'temurin'
-            
-            - name: Install Chrome
-              run: |
-                  wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-                  sudo mkdir -p /etc/apt/sources.list.d
-                  sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-                  sudo apt-get update
-                  sudo apt-get -y install google-chrome-stable
-            
-            - name: Install dependencies
-              run: mvn install -DskipTests
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-            - name: Run Test
-              run: |
-                mvn verify ${{ inputs.tag != '' && format('-Dcucumber.filter.tags="{0}"', inputs.tag) || '' }} -Dcucumber.env="${{ inputs.env }}"
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo mkdir -p /etc/apt/sources.list.d
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get -y install google-chrome-stable
 
-            - name: Subida de Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: "Cucumber-Results-${{ inputs.env }}"
-                  path: "target/cucumber-reports"
-                  retention-days: 1
+      - name: Install ChromeDriver
+        run: |
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1,2)
+          CHROMEDRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})
+          wget https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip -d /usr/local/bin/
+          chmod +x /usr/local/bin/chromedriver
+
+      - name: Install dependencies
+        run: mvn install -DskipTests
+      
+      - name: Run Test
+        run: |
+          mvn verify ${{ inputs.tag != '' && format('-Dcucumber.filter.tags="{0}"', inputs.tag) || '' }} -Dcucumber.env="${{ inputs.env }}"
+
+      - name: Subida de Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: "Cucumber-Results-${{ inputs.env }}"
+            path: "target/cucumber-reports"
+            retention-days: 1
            
