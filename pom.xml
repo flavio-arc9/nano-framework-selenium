@@ -12,6 +12,8 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.failsafe.version>3.5.3</maven.failsafe.version>
         <cucumber.version>7.15.0</cucumber.version>
+        <testng.version>7.11.0</testng.version>
+        <selenium.version>4.31.0</selenium.version>
         <parallel.tests>1</parallel.tests>
     </properties>
 
@@ -31,13 +33,13 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>7.11.0</version>
+            <version>${testng.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <version>4.31.0</version>
+            <version>${selenium.version}</version>
         </dependency>
 
         <dependency>
@@ -51,6 +53,7 @@
             <artifactId>opencsv</artifactId>
             <version>5.7.1</version>
         </dependency>
+
     </dependencies>
 
     <build>
