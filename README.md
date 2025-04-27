@@ -81,13 +81,13 @@ nano-framework-selenium/
 1. Para ejecutar las pruebas, utiliza el siguiente comando:
    ```bash
    #Ejecucion Total
-   mvn verify	
+   mvn test	
 
    #Ejecución por tags
-   mvn verify -Dcucumber.filter.tags="@google"
+   mvn test -Dcucumber.filter.tags="@google"
 
    #Ejecución de ambiente
-   mvn verify -Dcucumber.filter.tags="@google" -Dcucumber.env="test" or prod
+   mvn test -Dcucumber.filter.tags="@google" -Dcucumber.env="test" or prod
    ```
    Esto ejecutará las pruebas definidas en los archivos `.feature` utilizando Cucumber y TestNG.
 

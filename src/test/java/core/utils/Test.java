@@ -1,4 +1,4 @@
-package core.util;
+package core.utils;
 
 import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;

@@ -5,8 +5,8 @@ import java.util.Map;
 
 import org.testng.Assert;
 
-import core.page.ExamplePage;
-import core.util.Excel;
+import core.pages.ExamplePage;
+import core.utils.Excel;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;

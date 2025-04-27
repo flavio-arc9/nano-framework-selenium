@@ -1,4 +1,4 @@
-package core.util;
+package core.utils;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
@@ -17,14 +17,17 @@ import java.util.TimeZone;
 public class Action {
 
     protected WebDriver driver = Core.getDriver();
-    private final int DURATION = 10;
+    private final int DURATION = 15;
     private Actions action;
 
-    private void println(String value) {
+    protected void println(String value) {
         DateFormat df = new SimpleDateFormat("YY-MM-dd HH:mm:ss");
         df.setTimeZone(TimeZone.getTimeZone("America/Bogota"));
         String date = df.format(new Date());
-        System.out.println("[" + date + "] " + value);
+        String ANSI_ORANGE = "\u001B[33m";
+        String ANSI_GREEN = "\u001B[32m";
+        String ANSI_RESET = "\u001B[0m";
+        System.out.println(ANSI_ORANGE + "[" + date + "] -> " + ANSI_GREEN + value + ANSI_RESET);
     }
 
     protected WebElement element(By locator) {
@@ -151,14 +154,33 @@ public class Action {
         }
     }
 
-    protected String getValue(By locator) {
+    protected void selectTextReact(By locator, String text) {
         try {
-            this.println("[GetValue] -> " + locator);
-            return element(locator).getDomProperty("value");
+            this.println("[SelectByTextReact] -> " + locator + " => " + text);
+            click(locator);
+            sleep(1);
+
+            WebElement option = element(By.xpath("//*[contains(text(),'" + text + "')]"));
+            this.println("[SelectByTextReact][Option]: " + option.getText());
+            option.click();
         } catch (RuntimeException we) {
-            ErrorInteraction(String.valueOf(locator));
-            return null;
+            ErrorInteraction(String.valueOf(we.getMessage()));
         }
+    }
+
+    protected void filter(By contentlocators, String value) {
+        this.println("[Filter] -> " + contentlocators + " => " + value);
+        elements(contentlocators).stream()
+                .filter(element -> element.getText().trim().equalsIgnoreCase(value))
+                .findFirst()
+                .ifPresent((e) -> {
+                    try {
+                        // WebElement::click
+                        e.click();
+                    } catch (Exception ex) {
+                        script("arguments[0].click();", e);
+                    }
+                });
     }
 
     protected void clear(By locator) {
@@ -170,12 +192,22 @@ public class Action {
         }
     }
 
+    protected String getValue(By locator) {
+        try {
+            this.println("[GetValue] -> " + locator);
+            return element(locator).getDomProperty("value");
+        } catch (RuntimeException we) {
+            //ErrorInteraction(String.valueOf(locator));
+            return null;
+        }
+    }
+
     protected String getText(By locator) {
         try {
             this.println("[GetText] -> " + locator);
             return element(locator).getText();
         } catch (RuntimeException we) {
-            ErrorInteraction(String.valueOf(locator));
+            //ErrorInteraction(String.valueOf(locator));
             return null;
         }
     }
@@ -185,7 +217,7 @@ public class Action {
             this.println("[GetDomProperty] -> " + locator);
             return element(locator).getDomProperty(attribute);
         } catch (RuntimeException we) {
-            ErrorInteraction(String.valueOf(locator));
+            //ErrorInteraction(String.valueOf(locator));
             return null;
         }
     }
@@ -194,15 +226,14 @@ public class Action {
         this.println("[isDisplayed] -> " + locator);
         try {
             boolean is = element(locator).isDisplayed();
-            this.println("[isDisplayed] -> " + locator + " => " + is);
             return is;
         } catch (RuntimeException we) {
-            this.println("[isDisplayed] -> " + locator + " => " + false);
             return false;
         }
     }
 
     protected Boolean isDisplayed(By locator, int seg) {
+        this.println("[isDisplayed] -> " + locator);
         try {
             boolean is = element(locator, seg).isDisplayed();
             return is;
@@ -214,7 +245,8 @@ public class Action {
     protected void sleep(Double seg) {
         this.println("[Sleep] -> " + seg + " seg");
         try {
-            if (seg <= 0) return;
+            if (seg <= 0)
+                return;
             Thread.sleep((long) (seg * 1000));
         } catch (InterruptedException we) {
             Thread.currentThread().interrupt();
@@ -229,6 +261,16 @@ public class Action {
             Thread.sleep(seg * 1000);
         } catch (InterruptedException we) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    protected void scroll(int x, int y) {
+        try {
+            this.println("[Scroll] -> X: " + x + " => Y: " + y);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("window.scrollBy(" + x + "," + y + ")", "");
+        } catch (RuntimeException we) {
+            ErrorInteraction(we.getMessage());
         }
     }
 
@@ -265,8 +307,112 @@ public class Action {
         return status;
     }
 
+    protected void switchFrame(By locator) {
+        try {
+            this.println("[SwitchFrame] -> " + locator);
+            driver.switchTo().defaultContent();
+            driver.switchTo().frame(element(locator));
+        } catch (RuntimeException we) {
+            ErrorInteraction(String.valueOf(locator));
+        }
+    }
+
+    protected void switchFrame(int windows) {
+        try {
+            this.println("[SwitchFrame] -> " + windows);
+            driver.switchTo().defaultContent();
+            driver.switchTo().frame(windows);
+        } catch (RuntimeException we) {
+            ErrorInteraction("Frame-" + String.valueOf(windows));
+        }
+    }
+
+    protected void switchDefaultContent() {
+        try {
+            this.println("[SwitchDefaultContent]");
+            driver.switchTo().defaultContent();
+        } catch (RuntimeException we) {
+            ErrorInteraction(we.getMessage());
+        }
+    }
+
+    protected void switchToNewTab() {
+        try {
+            this.println("[SwitchToNewTab]");
+            String currentWindow = driver.getWindowHandle();
+            for (String windowHandle : driver.getWindowHandles()) {
+                if (!windowHandle.equals(currentWindow)) {
+                    currentWindow = windowHandle;
+                    break;
+                }
+            }
+            driver.close();
+            driver.switchTo().window(currentWindow);
+        } catch (RuntimeException we) {
+            ErrorInteraction(we.getMessage());
+        }
+    }
+
+    protected void switchToNewTab(int index) {
+        try {
+            this.println("[SwitchToNewTab] -> " + index);
+            int i = 0;
+            for (String windowHandle : driver.getWindowHandles()) {
+                if (i == index) {
+                    driver.switchTo().window(windowHandle);
+                    break;
+                }
+                i++;
+            }
+        } catch (RuntimeException we) {
+            ErrorInteraction(we.getMessage());
+        }
+    }
+
+    protected void switchToNewTab(String title) {
+        try {
+            this.println("[SwitchToNewTab] -> " + title);
+            for (String windowHandle : driver.getWindowHandles()) {
+                driver.switchTo().window(windowHandle);
+                if (driver.getTitle().equals(title)) {
+                    break;
+                }
+            }
+        } catch (RuntimeException we) {
+            ErrorInteraction(we.getMessage());
+        }
+    }
+
+    protected void zoom(int size) {
+        try {
+            this.println("[Zoom] -> size" + size);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("document.body.style.zoom = '" + size + "%'");
+        } catch (RuntimeException we) {
+            ErrorInteraction(we.getMessage());
+        }
+    }
+
+    protected void script(String script) {
+        this.println("[Script] -> " + script);
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript(script);
+    }
+
+    protected void script(String script, By locator) {
+        this.println("[Script] -> " + script);
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript(script, locator);
+    }
+
+    protected void script(String script, WebElement element) {
+        this.println("[Script] -> " + script);
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript(script, element);
+    }
+
     private void ErrorInteraction(String description) {
-        this.println("Error Interaction : " + description);
-        driver.close();
+        this.println("Error Interaction: " + description);
+        throw new RuntimeException("Error Interaction: " + description);
     }
 }

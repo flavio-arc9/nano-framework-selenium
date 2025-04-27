@@ -1,9 +1,9 @@
-package core.page;
+package core.pages;
 
 import org.openqa.selenium.By;
 
-import core.util.Action;
-import core.util.Core;
+import core.utils.Action;
+import core.utils.Core;
 
 public class ExamplePage extends Action {
     
